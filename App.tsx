@@ -2,14 +2,20 @@ import React from "react";
 import { SafeAreaView, StyleSheet } from "react-native";
 import { ExpenseProvider } from "./src/Context/ExpenseContext";
 import HomeScreen from "./src/screens/HomeScreen";
+import { AuthProvider } from "./src/Context/AuthContext";
+
+import { useAuth } from "./src/Context/AuthContext";
+import LoginScreen from "./src/screens/LoginScreen";
 
 export default function App() {
   return (
-    <ExpenseProvider>
-      <SafeAreaView style={styles.container}>
-        <HomeScreen />
-      </SafeAreaView>
-    </ExpenseProvider>
+    <AuthProvider>
+      <ExpenseProvider>
+        <SafeAreaView style={styles.container}>
+          <HomeScreen />
+        </SafeAreaView>
+      </ExpenseProvider>
+    </AuthProvider>
   );
 }
 

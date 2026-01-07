@@ -1,46 +1,87 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  ReactNode,
+} from "react";
+import {
+  getExpenses,
+  addExpense as addExpenseToDB,
+  deleteExpenseFromDB,
+} from "../storage/expenseStorage";
+import { useAuth } from "./AuthContext";
 import { Expense } from "../types/expense";
-import { loadExpenses, saveExpenses } from "../storage/expenseStorage";
+import { subscribeToExpenses } from "../storage/expenseStorage";
 
-type ExpenseContextType = {
+interface ExpenseContextType {
   expenses: Expense[];
-  addExpense: (expense: Expense) => void;
-  deleteExpense: (id: string) => void;
-};
+  setExpenses: React.Dispatch<React.SetStateAction<Expense[]>>;
+  loading: boolean;
+  addExpense: (expense: Omit<Expense, "id">) => Promise<void>;
+  deleteExpense: (id: string) => Promise<void>;
+}
 
-const ExpenseContext = createContext<ExpenseContextType | null>(null);
+const ExpenseContext = createContext<ExpenseContextType | undefined>(undefined);
 
-export const ExpenseProvider = ({
-  children,
-}: {
-  children: React.ReactNode;
-}) => {
+export const ExpenseProvider = ({ children }: { children: ReactNode }) => {
+  const { user } = useAuth();
   const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadExpenses().then(setExpenses);
-  }, []);
+    if (!user) {
+      setExpenses([]);
+      setLoading(false);
+      return;
+    }
 
-  useEffect(() => {
-    saveExpenses(expenses);
-  }, [expenses]);
+    setLoading(true);
 
-  const addExpense = (expense: Expense) => {
-    setExpenses((prev) => [expense, ...prev]);
+    // subscribe to live updates
+    const unsubscribe = subscribeToExpenses(user.uid, (data) => {
+      setExpenses(data); // automatically updates state
+      setLoading(false);
+    });
+
+    // cleanup subscription when component unmounts or user changes
+    return () => unsubscribe();
+  }, [user]);
+
+  // Add expense
+  const addExpense = async (expense: Omit<Expense, "id">) => {
+    if (!user) return;
+    try {
+      const docRef = await addExpenseToDB(user.uid, expense); // store in Firestore
+      setExpenses((prev) => [...prev, { id: docRef.id, ...expense }]);
+      // update local state
+    } catch (error) {
+      console.error("Failed to add expense:", error);
+    }
   };
-  const deleteExpense = (id: string) => {
-    setExpenses((prev) => prev.filter((exp) => exp.id !== id));
+  //delete expense
+  const deleteExpense = async (id: string) => {
+    if (!user) return;
+    try {
+      await deleteExpenseFromDB(user.uid, id); // remove from Firestore
+      setExpenses((prev) => prev.filter((exp) => exp.id !== id)); // remove from local state
+    } catch (error) {
+      console.error("Failed to delete expense:", error);
+    }
   };
+
   return (
-    <ExpenseContext.Provider value={{ expenses, addExpense, deleteExpense }}>
+    <ExpenseContext.Provider
+      value={{ expenses, setExpenses, loading, addExpense, deleteExpense }}
+    >
       {children}
     </ExpenseContext.Provider>
   );
 };
 
-export const useExpenses = () => {
+export const useExpenses = (): ExpenseContextType => {
   const context = useContext(ExpenseContext);
   if (!context)
-    throw new Error("useExpenses must be used inside ExpenseProvider");
+    throw new Error("useExpenses must be used within an ExpenseProvider");
   return context;
 };

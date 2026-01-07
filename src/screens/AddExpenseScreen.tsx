@@ -4,6 +4,7 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
+  Alert,
 } from "react-native";
 import { useState } from "react";
 import { COLORS } from "../theme/colors";
@@ -26,15 +27,23 @@ export default function AddExpenseScreen({ onClose }: Props) {
   const [note, setNote] = useState("");
 
   const handleSave = () => {
-    if (!amount || !category) return;
+    if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) {
+      Alert.alert("Validation Error", "Please enter a valid amount.");
+      return;
+    }
+
+    if (!category) {
+      Alert.alert("Validation Error", "Please choose a category.");
+      return;
+    }
 
     addExpense({
-      id: generateId(),
       amount: Number(amount),
       category,
       note,
       date: new Date().toISOString(),
     });
+    console.log("Adding expense:", addExpense);
 
     onClose();
   };
@@ -47,7 +56,11 @@ export default function AddExpenseScreen({ onClose }: Props) {
         placeholder="Amount"
         keyboardType="numeric"
         value={amount}
-        onChangeText={setAmount}
+        onChangeText={(text) => {
+          // allow digits and optional decimal
+          const cleaned = text.replace(/[^0-9.]/g, "");
+          setAmount(cleaned);
+        }}
         style={styles.input}
       />
 

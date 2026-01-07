@@ -9,24 +9,17 @@ type Props = {
 };
 
 export default function MonthlySummary({ expenses }: Props) {
-  const now = new Date();
-  const currentMonth = now.getMonth();
-  const currentYear = now.getFullYear();
-
-  const monthlyTotal = expenses
-    .filter((exp) => {
-      const date = new Date(exp.date);
-      return (
-        date.getMonth() === currentMonth && date.getFullYear() === currentYear
-      );
-    })
-    .reduce((sum, exp) => sum + exp.amount, 0);
+  // sum all amounts
+  const monthlyTotal = expenses.reduce(
+    (sum, exp) => sum + Number(exp.amount),
+    0
+  );
 
   return (
     <View style={styles.container}>
       <Text style={styles.label}>This Month</Text>
       <Text style={styles.amount}>
-        ${formatNumberWithCommas(Number(monthlyTotal.toFixed(2)))}
+        -${formatNumberWithCommas(Math.abs(Number(monthlyTotal.toFixed(2))))}
       </Text>
     </View>
   );
