@@ -1,9 +1,7 @@
 import { useState } from "react";
 import { Alert } from "react-native";
-Alert.alert("Login Failed", "Email or password is incorrect.", [
-  { text: "Try Again", style: "default" },
-  { text: "Cancel", style: "cancel" },
-]);
+import { useRef, useEffect } from "react";
+import { Animated } from "react-native";
 
 import {
   View,
@@ -11,6 +9,7 @@ import {
   TouchableOpacity,
   Text,
   StyleSheet,
+  Image,
 } from "react-native";
 import {
   signInWithEmailAndPassword,
@@ -24,6 +23,28 @@ export default function LoginScreen() {
   const [password, setPassword] = useState("");
   const [isLogin, setIsLogin] = useState(true);
 
+  //   smooth animation for the login screen
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(30)).current;
+
+  useEffect(() => {
+    fadeAnim.setValue(0);
+    slideAnim.setValue(30);
+
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 350,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 350,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [isLogin]);
+
   const submit = async () => {
     try {
       if (isLogin) {
@@ -35,60 +56,95 @@ export default function LoginScreen() {
       Alert.alert("Login Failed", "Email or password is incorrect.", [
         {
           text: "Try Again",
+          style: "default",
+        },
+        {
+          text: "Cancel",
           onPress: () => {
             setEmail("");
             setPassword("");
           },
-          style: "default",
+          style: "cancel",
         },
-        { text: "Cancel", style: "cancel" },
       ]);
     }
   };
 
   return (
     <View style={styles.container}>
+      {/* add image of logo */}
+      <Animated.View
+        style={{
+          opacity: fadeAnim,
+          transform: [{ translateY: slideAnim }],
+        }}
+      >
+        <Image
+          source={require("../../assets/icon.png")}
+          style={{
+            width: 120,
+            height: 120,
+            alignSelf: "center",
+            marginBottom: 20,
+          }}
+        />
+      </Animated.View>
+
       {/* Cool Header */}
-      <View style={[styles.header, { backgroundColor: COLORS.accent }]}>
-        <Text style={styles.headerText}>
-          {isLogin ? "Welcome Back!" : "Create Account"}
-        </Text>
-        <Text style={styles.headerSubtitle}>
-          {isLogin
-            ? "Login to track your expenses"
-            : "Sign up to start managing your money"}
-        </Text>
-      </View>
+      <Animated.View
+        style={{
+          opacity: fadeAnim,
+          transform: [{ translateY: slideAnim }],
+        }}
+      >
+        <View style={[styles.header, { backgroundColor: COLORS.accent }]}>
+          <Text style={styles.headerText}>
+            {isLogin ? "Welcome Back!" : "Create Account"}
+          </Text>
+          <Text style={styles.headerSubtitle}>
+            {isLogin
+              ? "Login to track your expenses"
+              : "Sign up to start managing your money"}
+          </Text>
+        </View>
+      </Animated.View>
 
       {/* Form Inputs */}
-      <TextInput
-        value={email}
-        placeholder="Email"
-        placeholderTextColor="#999"
-        style={styles.input}
-        onChangeText={setEmail}
-        keyboardType="email-address"
-        autoCapitalize="none"
-      />
+      <Animated.View
+        style={{
+          opacity: fadeAnim,
+          transform: [{ translateY: slideAnim }],
+        }}
+      >
+        <TextInput
+          value={email}
+          placeholder="Email"
+          placeholderTextColor="#999"
+          style={styles.input}
+          onChangeText={setEmail}
+          keyboardType="email-address"
+          autoCapitalize="none"
+        />
 
-      <TextInput
-        value={password}
-        placeholder="Password"
-        placeholderTextColor="#999"
-        style={styles.input}
-        secureTextEntry
-        onChangeText={setPassword}
-      />
+        <TextInput
+          value={password}
+          placeholder="Password"
+          placeholderTextColor="#999"
+          style={styles.input}
+          secureTextEntry
+          onChangeText={setPassword}
+        />
 
-      {/* Action Button */}
-      <TouchableOpacity style={styles.button} onPress={submit}>
-        <Text style={styles.buttonText}>{isLogin ? "Login" : "Sign Up"}</Text>
-      </TouchableOpacity>
+        {/* Action Button */}
+        <TouchableOpacity style={styles.button} onPress={submit}>
+          <Text style={styles.buttonText}>{isLogin ? "Login" : "Sign Up"}</Text>
+        </TouchableOpacity>
 
-      {/* Toggle Login/Sign-Up */}
-      <Text style={styles.toggleText} onPress={() => setIsLogin(!isLogin)}>
-        {isLogin ? "Create account" : "Already have an account?"}
-      </Text>
+        {/* Toggle Login/Sign-Up */}
+        <Text style={styles.toggleText} onPress={() => setIsLogin(!isLogin)}>
+          {isLogin ? "Create account" : "Already have an account?"}
+        </Text>
+      </Animated.View>
     </View>
   );
 }
